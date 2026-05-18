@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>猜数字游戏</title>
+    <link rel="stylesheet" href="/css/guess.css">
+</head>
+<body>
+    <h1>猜数字游戏</h1>
+    <div id="gameArea">
+        <p id="message">点击“开始新游戏”</p>
+        <p>剩余次数：<span id="remaining">-</span></p>
+        <p>当前分数：<span id="score">100</span></p>
+        <input type="number" id="guessInput" placeholder="输入1~100" disabled>
+        <button id="guessBtn" disabled>猜</button>
+        <button id="startBtn">开始新游戏</button>
+        <button id="logoutBtn">退出登录</button>
+    </div>
+   <script src="/js/guess.js"></script>
+</body>
+</html>

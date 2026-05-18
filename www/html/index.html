@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>游戏大厅</title>
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+<body>
+    <header>
+    <h1>游戏大厅</h1>
+        <div>
+            <span id="userInfo"></span>
+            <button id="settingsBtn">设置</button>
+            <button id="logoutBtn">退出登录</button>
+        </div>
+    </header>
+    <div id="message"></div>
+    <div class="games">
+        <div class="game-card">
+            <h3>猜数字</h3>
+            <p>猜中随机数字，分数越高越好</p>
+            <button onclick="location.href='guess.html'">开始游戏</button>
+        </div>
+        <div class="game-card">
+            <h3>推箱子</h3>
+            <p>经典推箱子，步数越少分越高</p>
+            <button onclick="location.href='pushbox.html'">开始游戏</button>
+        </div>
+    </div>
+    <script src="/js/index.js"></script>
+</body>
+</html>

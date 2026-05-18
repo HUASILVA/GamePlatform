@@ -1,0 +1,7 @@
+body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; }
+header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; margin-bottom: 20px; }
+.games { display: flex; gap: 20px; }
+.game-card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; width: 200px; text-align: center; }
+.game-card h3 { margin-top: 0; }
+button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.error { color: red; }

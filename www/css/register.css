@@ -1,0 +1,4 @@
+body { font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; }
+input, button { display: block; width: 100%; margin: 10px 0; padding: 8px; }
+.error { color: red; }
+.success { color: green; }
