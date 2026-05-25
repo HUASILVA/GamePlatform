@@ -1,6 +1,7 @@
 // 禁用 HTTPS 支持（本项目只使用 HTTP，避免 OpenSSL 依赖）
 // #define CPPHTTPLIB_OPENSSL_SUPPORT
 
+#include "CBDGame.h"
 #include "GuessGame.h"          // 猜数字游戏类的头文件（声明了 GuessGame 类）
 #include <unordered_map>        // 哈希表容器，用于存储 token->用户名 和 用户名->游戏实例
 #include <random>               // 随机数生成（用于生成 token 和猜数字的目标数）
@@ -18,6 +19,8 @@ using json = nlohmann::json;    // 简化 JSON 类型名称，后续直接使用
 // 内存中的 token 存储（服务器重启后所有 token 失效，用户需重新登录）
 // 键: token 字符串（例如 "aB3dE9..."）; 值: 用户名
 std::unordered_map<std::string, std::string> token_store;
+// 存储每个用户的处波挡游戏实例（单人模式，玩家 vs AI）
+std::unordered_map<std::string, CBDGame> cbdGames;
 /**
  * 生成一个随机的 32 位字符串（包含数字、大写字母、小写字母）
  * 用于用户登录成功后颁发 token。
@@ -640,8 +643,113 @@ int main() {
     });
 
 
+    // ========== 处波挡游戏（单人 vs AI） ==========
+    // 开始新游戏
+    svr.Post("/game/cbd/start", [&](const httplib::Request& req, httplib::Response& res) {
+        std::string username = getUserFromToken(req);
+        if (username.empty()) {
+            res.status = 401;
+            res.set_content(R"({"error":"Unauthorized"})", "application/json");
+            return;
+        }
+        auto& game = cbdGames[username];
+        game.init();
+        json result;
+        result["message"] = "Game started. Your HP:2, Energy:0. AI HP:2, Energy:0";
+        res.set_content(result.dump(), "application/json");
+    });
+
+    // 玩家提交动作
+    svr.Post("/game/cbd/action", [&](const httplib::Request& req, httplib::Response& res) {
+    std::string username = getUserFromToken(req);
+    if (username.empty()) {
+        res.status = 401;
+        res.set_content(R"({"error":"Unauthorized"})", "application/json");
+        return;
+    }
+    auto it = cbdGames.find(username);
+    if (it == cbdGames.end()) {
+        res.status = 400;
+        res.set_content(R"({"error":"No active game, please start first"})", "application/json");
+        return;
+    }
+    auto& game = it->second;
+    try {
+        auto body = json::parse(req.body);
+        int actionType = body["action"]; // 0:获取费用, 1:攻击, 2:防御, 3:黑洞, 4:白洞, 5:金身, 6:爆破
+        bool ok = false;
+        if (actionType == 0) {
+            ok = game.setPlayerAction(CBDGame::ACTION_GAIN);
+        } else if (actionType == 1) {
+            int attackId = body["attackId"];
+            int multiplier = body.value("multiplier", 1);
+            ok = game.setPlayerAction(CBDGame::ACTION_ATTACK, attackId, multiplier);
+        } else if (actionType == 2) {
+            int defenseId = body["defenseId"];
+            ok = game.setPlayerAction(CBDGame::ACTION_DEFENSE, -1, 1, defenseId);
+        } else if (actionType == 3) {
+            ok = game.setPlayerAction(CBDGame::ACTION_BLACKHOLE);
+        } else if (actionType == 4) {
+            ok = game.setPlayerAction(CBDGame::ACTION_WHITEHOLE);
+        } else if (actionType == 5) {
+            ok = game.setPlayerAction(CBDGame::ACTION_GOLDEN);
+        } else if (actionType == 6) {
+            ok = game.setPlayerAction(CBDGame::ACTION_BOMB);
+        } else {
+            res.status = 400;
+            res.set_content(R"({"error":"Invalid action type"})", "application/json");
+            return;
+        }
+        if (!ok) {
+            res.status = 400;
+            res.set_content("{\"error\":\"Invalid action (cost too high or invalid parameters)\"}", "application/json");
+            return;
+        }
+        game.setAIAction();
+        int winner = game.resolveTurn();
+        json result;
+        result["player_hp"] = game.getPlayerHp();
+        result["player_energy"] = game.getPlayerEnergy();
+        result["ai_hp"] = game.getAiHp();
+        result["ai_energy"] = game.getAiEnergy();
+        result["last_result"] = game.getLastResult();
+        result["game_over"] = (winner != 0);
+        result["winner"] = winner;
+        res.set_content(result.dump(), "application/json");
+    } catch (const std::exception& e) {
+        res.status = 400;
+        json err;
+        err["error"] = "Invalid JSON or action";
+        res.set_content(err.dump(), "application/json");
+    }
+});
+
+    // 获取当前游戏状态
+    svr.Get("/game/cbd/state", [&](const httplib::Request& req, httplib::Response& res) {
+        std::string username = getUserFromToken(req);
+        if (username.empty()) {
+            res.status = 401;
+            res.set_content(R"({"error":"Unauthorized"})", "application/json");
+            return;
+        }
+        auto it = cbdGames.find(username);
+        if (it == cbdGames.end()) {
+            res.status = 404;
+            res.set_content(R"({"error":"No active game"})", "application/json");
+            return;
+        }
+        auto& game = it->second;
+        json result;
+        result["player_hp"] = game.getPlayerHp();
+        result["player_energy"] = game.getPlayerEnergy();
+        result["ai_hp"] = game.getAiHp();
+        result["ai_energy"] = game.getAiEnergy();
+        result["last_result"] = game.getLastResult();
+        res.set_content(result.dump(), "application/json");
+    });
 
 
+    
 
     // ========== 静态文件挂载（提供前端页面、样式、JavaScript 文件） ==========
     // 将 URL 路径映射到本地文件夹，使浏览器可以获取静态资源
@@ -650,8 +758,8 @@ int main() {
     svr.set_mount_point("/js", "./www/js");   // 访问 /js/xxx.js 时，去 ./www/js 找文件
 
     // 启动 HTTP 服务器，监听本机的 8080 端口
-    // 注意：listen 函数会阻塞当前线程，直到服务器停止（按 Ctrl+C 退出）
+    // 注意：listen 函数会阻塞当前线程，直到服务器停止
     svr.listen("localhost", 8080);
-
+    
     return 0;
 }

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>处波挡 - 单人模式</title>
+    <link rel="stylesheet" href="/css/cbd.css">
+</head>
+<body>
+    <h1>处波挡 (玩家 vs AI)</h1>
+    <div id="gameInfo">
+        <div>❤️ 你的血量: <span id="playerHp">2</span> &nbsp; ⚡ 费用: <span id="playerEnergy">0</span></div>
+        <div>🤖 AI血量: <span id="aiHp">2</span> &nbsp; ⚡ 费用: <span id="aiEnergy">0</span></div>
+    </div>
+    <div id="resultArea">
+        <p id="lastResult">等待开始...</p>
+    </div>
+    <div id="actionPanel">
+        <h3>选择动作</h3>
+        <button id="gainBtn">💰 获取费用 (+2)</button>
+        <button id="attackBtn">⚔️ 攻击</button>
+        <button id="defenseBtn">🛡️ 防御</button>
+        <!-- 新增特殊动作按钮 -->
+        <button id="blackholeBtn">🕳️ 黑洞 (2费)</button>
+        <button id="whiteholeBtn">⚪ 白洞 (4费)</button>
+        <button id="goldenBtn">✨ 金身 (1费，一局一次)</button>
+        <button id="bombBtn">💣 爆破 (5费)</button>
+    </div>
+    <div id="attackOptions" style="display:none;">
+        <h4>选择攻击招式及倍数</h4>
+        <select id="attackSelect"></select>
+        倍数: <input type="number" id="multiplier" min="1" max="5" value="1">
+        <button id="confirmAttack">确认攻击</button>
+        <button id="cancelAttack">取消</button>
+    </div>
+    <div id="defenseOptions" style="display:none;">
+        <h4>选择防御</h4>
+        <select id="defenseSelect"></select>
+        <button id="confirmDefense">确认防御</button>
+        <button id="cancelDefense">取消</button>
+    </div>
+    <button id="resetBtn">🔄 重新开始</button>
+    <button onclick="location.href='index.html'">🏠 返回大厅</button>
+
+    <script src="/js/cbd.js"></script>
+</body>
+</html>

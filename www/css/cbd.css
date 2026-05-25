@@ -1,0 +1,57 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    text-align: center;
+    background: #f5f5f5;
+}
+h1 {
+    color: #333;
+}
+#gameInfo {
+    display: flex;
+    justify-content: space-between;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#resultArea {
+    background: #e9ecef;
+    padding: 10px;
+    margin: 20px 0;
+    border-radius: 8px;
+    min-height: 60px;
+}
+button {
+    margin: 5px;
+    padding: 8px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    background: #007bff;
+    color: white;
+}
+button:hover {
+    background: #0056b3;
+}
+#attackOptions, #defenseOptions {
+    background: #fff;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+select, input {
+    padding: 5px;
+    margin: 0 10px;
+    font-size: 16px;
+}
+#resetBtn {
+    background: #28a745;
+}
+#resetBtn:hover {
+    background: #218838;
+}
