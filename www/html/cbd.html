@@ -11,14 +11,26 @@
         <div>❤️ 你的血量: <span id="playerHp">2</span> &nbsp; ⚡ 费用: <span id="playerEnergy">0</span></div>
         <div>🤖 AI血量: <span id="aiHp">2</span> &nbsp; ⚡ 费用: <span id="aiEnergy">0</span></div>
     </div>
-    <div id="resultArea">
-        <p id="lastResult">等待开始...</p>
+    <div id="resultArea" style="display: flex; gap: 20px; justify-content: space-between;">
+    <div id="timerArea" style="text-align: center; margin: 10px 0;">
+    <span id="timerText">倒计时: 5s</span>
+    <progress id="timerProgress" value="5" max="5" style="width: 100%; height: 20px;"></progress>
     </div>
+    <div id="playerEventBox" style="flex:1; background: #e9f5e9; border-radius: 12px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h4>📌 玩家事件</h4>
+        <p id="playerEvents" style="margin:0; white-space: pre-wrap;"></p>
+    </div>
+    <div id="aiEventBox" style="flex:1; background: #f0f0f0; border-radius: 12px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h4>🤖 AI事件</h4>
+        <p id="aiEvents" style="margin:0; white-space: pre-wrap;"></p>
+    </div>
+</div>
     <div id="actionPanel">
         <h3>选择动作</h3>
         <button id="gainBtn">💰 获取费用 (+2)</button>
         <button id="attackBtn">⚔️ 攻击</button>
         <button id="defenseBtn">🛡️ 防御</button>
+        <button id="releaseBlackholeBtn" style="background:#f0ad4e;">🌀 释放黑洞 (1费)</button>
         <!-- 新增特殊动作按钮 -->
         <button id="blackholeBtn">🕳️ 黑洞 (2费)</button>
         <button id="whiteholeBtn">⚪ 白洞 (4费)</button>

@@ -55,3 +55,43 @@ select, input {
 #resetBtn:hover {
     background: #218838;
 }
+#resultArea {
+    margin: 20px 0;
+}
+#playerEventBox {
+    background: #e9f5e9;
+}
+#aiEventBox {
+    background: #f0f0f0;
+}
+/* 倒计时区域样式 */
+#timerArea {
+    background: rgba(0,0,0,0.05);
+    border-radius: 40px;
+    padding: 8px 16px;
+    margin: 10px 0;
+    backdrop-filter: blur(2px);
+}
+#timerText {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-right: 10px;
+}
+#timerProgress {
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    appearance: none;
+}
+#timerProgress::-webkit-progress-bar {
+    background-color: #e0e0e0;
+    border-radius: 6px;
+}
+#timerProgress::-webkit-progress-value {
+    background-color: #4caf50;
+    border-radius: 6px;
+    transition: width 0.2s linear;
+}
+/* 倒计时最后3秒内改变进度条颜色（可选，需JS配合，暂不实现） */

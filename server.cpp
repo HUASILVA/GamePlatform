@@ -68,15 +68,16 @@ void init_db() {
     // username: 用户名，唯一，不能重复
     // password: 密码（当前明文存储，后续可改为哈希）
     const char* sql = "CREATE TABLE IF NOT EXISTS users ("
-                      "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                      "username TEXT UNIQUE, "
-                      "password TEXT);";
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "username TEXT UNIQUE, "
+        "password TEXT);";
     char* errMsg = nullptr;
     sqlite3_exec(db, sql, nullptr, nullptr, &errMsg);
     if (errMsg) {
         std::cerr << "creat table is false (users): " << errMsg << std::endl;
         sqlite3_free(errMsg);
-    } else {
+    }
+    else {
         std::cout << "users table is ready" << std::endl;
     }
     // ---------- 创建 scores 表（用于存储游戏最高分）----------
@@ -87,17 +88,18 @@ void init_db() {
     // best_score: 该用户在此游戏中的历史最高分
     // updated_at: 最后一次更新分数的时间戳（自动记录）
     const char* sql_scores = "CREATE TABLE IF NOT EXISTS scores ("
-                             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                             "user_id INTEGER, "
-                             "game_type TEXT, "
-                             "best_score INTEGER, "
-                             "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "user_id INTEGER, "
+        "game_type TEXT, "
+        "best_score INTEGER, "
+        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
     errMsg = nullptr;
     int rc = sqlite3_exec(db, sql_scores, nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
         std::cerr << "creat table is false(scores): " << errMsg << std::endl;
         sqlite3_free(errMsg);
-    } else {
+    }
+    else {
         std::cout << "scores table is ready" << std::endl;
     }
 
@@ -147,7 +149,7 @@ bool submit_score(const std::string& username, const std::string& game_type, int
     auto id_callback = [](void* data, int argc, char** argv, char** colName) -> int {
         if (argc > 0 && argv[0]) *((int*)data) = atoi(argv[0]);
         return 0;
-    };
+        };
     sqlite3_exec(db, id_sql.c_str(), id_callback, &user_id, nullptr);
     if (user_id == -1) {
         sqlite3_close(db);
@@ -156,12 +158,12 @@ bool submit_score(const std::string& username, const std::string& game_type, int
 
     // 查询当前最高分
     std::string select_sql = "SELECT best_score FROM scores WHERE user_id = " + std::to_string(user_id) +
-                             " AND game_type = '" + game_type + "';";
+        " AND game_type = '" + game_type + "';";
     int current_best = -1;
     auto select_callback = [](void* data, int argc, char** argv, char** colName) -> int {
         if (argc > 0 && argv[0]) *((int*)data) = atoi(argv[0]);
         return 0;
-    };
+        };
     sqlite3_exec(db, select_sql.c_str(), select_callback, &current_best, nullptr);
 
     bool success = false;
@@ -169,11 +171,12 @@ bool submit_score(const std::string& username, const std::string& game_type, int
         std::string upsert_sql;
         if (current_best == -1) {
             upsert_sql = "INSERT INTO scores (user_id, game_type, best_score) VALUES (" +
-                         std::to_string(user_id) + ", '" + game_type + "', " + std::to_string(score) + ");";
-        } else {
+                std::to_string(user_id) + ", '" + game_type + "', " + std::to_string(score) + ");";
+        }
+        else {
             upsert_sql = "UPDATE scores SET best_score = " + std::to_string(score) +
-                         ", updated_at = CURRENT_TIMESTAMP WHERE user_id = " + std::to_string(user_id) +
-                         " AND game_type = '" + game_type + "';";
+                ", updated_at = CURRENT_TIMESTAMP WHERE user_id = " + std::to_string(user_id) +
+                " AND game_type = '" + game_type + "';";
         }
         char* errMsg = nullptr;
         int rc = sqlite3_exec(db, upsert_sql.c_str(), nullptr, nullptr, &errMsg);
@@ -182,7 +185,8 @@ bool submit_score(const std::string& username, const std::string& game_type, int
             std::cerr << "submit_score false: " << errMsg << std::endl;
             sqlite3_free(errMsg);
         }
-    } else {
+    }
+    else {
         success = true; // 未破纪录，但操作成功
     }
     sqlite3_close(db);
@@ -208,7 +212,7 @@ int getUserId(const std::string& username) {
             *((int*)data) = atoi(argv[0]);
         }
         return 0;
-    };
+        };
     sqlite3_exec(db, sql.c_str(), callback, &user_id, nullptr);
     sqlite3_close(db);
     return user_id;
@@ -226,16 +230,16 @@ int main() {
     // 根路径：返回简单的欢迎文字，用于测试服务器是否正常运行
     svr.Get("/", [](const httplib::Request& req, httplib::Response& res) {
         res.set_content("Hello from C++ Game Platform!", "text/plain");
-    });
+        });
 
     // 状态接口：返回服务器状态和支持的游戏列表
     svr.Get("/api/status", [](const httplib::Request& req, httplib::Response& res) {
         json j;
         j["status"] = "ok";
         j["players"] = 0;                 // 当前在线玩家数（暂未实现统计功能）
-        j["games"] = {"pushbox", "guess"}; // 游戏列表
+        j["games"] = { "pushbox", "guess" }; // 游戏列表
         res.set_content(j.dump(), "application/json");
-    });
+        });
 
     // ========== 用户注册接口 ==========
     // 方法：POST
@@ -257,7 +261,7 @@ int main() {
                 return;
             }
 
-             // 2. 长度检查（例如用户名3-20字符，密码6-20字符）
+            // 2. 长度检查（例如用户名3-20字符，密码6-20字符）
             if (username.length() < 3 || username.length() > 20) {
                 result["success"] = false;
                 result["error"] = "Username must be 3-20 characters";
@@ -282,8 +286,8 @@ int main() {
             }
 
             // 构造 INSERT 语句（注意：直接拼接字符串存在 SQL 注入风险，演示项目暂可接受）
-            std::string sql = "INSERT INTO users (username, password) VALUES ('" 
-                              + username + "', '" + password + "');";
+            std::string sql = "INSERT INTO users (username, password) VALUES ('"
+                + username + "', '" + password + "');";
             char* errMsg = nullptr;
             rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
             if (rc != SQLITE_OK) {
@@ -291,17 +295,19 @@ int main() {
                 result["success"] = false;
                 result["error"] = errMsg;
                 sqlite3_free(errMsg);
-            } else {
+            }
+            else {
                 result["success"] = true;
             }
             sqlite3_close(db);
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             // JSON 解析异常或其他标准异常
             result["success"] = false;
             result["error"] = e.what();
         }
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
     // ========== 用户登录接口 ==========
     // 方法：POST
@@ -315,7 +321,7 @@ int main() {
             std::string password = body["password"];
 
 
-              // ========== 新增：字符合法性检查 ==========
+            // ========== 新增：字符合法性检查 ==========
             if (!isAlphanumeric(username) || !isAlphanumeric(password)) {
                 result["success"] = false;
                 result["error"] = "Invalid username or password format";
@@ -338,7 +344,7 @@ int main() {
             auto callback = [](void* data, int argc, char** argv, char** colName) -> int {
                 if (argc > 0 && argv[0]) *((std::string*)data) = argv[0];
                 return 0;
-            };
+                };
             rc = sqlite3_exec(db, sql.c_str(), callback, &stored_pw, nullptr);
             sqlite3_close(db);
 
@@ -348,16 +354,18 @@ int main() {
                 token_store[token] = username;
                 result["success"] = true;
                 result["token"] = token;
-            } else {
+            }
+            else {
                 result["success"] = false;
                 result["error"] = "Invalid username or password";
             }
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             result["success"] = false;
             result["error"] = e.what();
         }
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
     // ========== 受保护接口：获取当前登录用户的信息 ==========
     // 方法：GET
@@ -368,7 +376,8 @@ int main() {
         std::string token;
         if (auth.substr(0, 7) == "Bearer ") {
             token = auth.substr(7);
-        } else {
+        }
+        else {
             // 未提供正确的 Authorization 头
             res.status = 401;
             res.set_content(R"({"error":"Missing or invalid Authorization header"})", "application/json");
@@ -385,7 +394,7 @@ int main() {
         json result;
         result["username"] = it->second;
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
     // ========== 猜数字游戏相关路由（需要认证） ==========
 
@@ -406,7 +415,7 @@ int main() {
         result["remaining"] = game.getRemaining();  // 本游戏不限次数，返回 -1
         result["message"] = "New game started. Guess a number between 1 and 100.";
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
     // 提交猜测
     // 方法：POST /game/guess/play
@@ -443,18 +452,20 @@ int main() {
                     result["score"] = score;
                     submit_score(username, "guess", score);
                     // TODO: 这里应调用提交分数的接口（将本次得分存入 scores 表，供排行榜使用）
-                } else if (resultStr == "lose") {
+                }
+                else if (resultStr == "lose") {
                     result["score"] = 0;
                 }
                 // 游戏结束，从内存中删除该用户的游戏实例，释放资源
                 guessGames.erase(it);
             }
             res.set_content(result.dump(), "application/json");
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             res.status = 400;
             res.set_content(R"({"error":"Invalid JSON"})", "application/json");
         }
-    });
+        });
 
     // 获取当前游戏状态（用于页面刷新时恢复游戏）
     // 方法：GET /game/guess/state
@@ -470,13 +481,14 @@ int main() {
         json result;
         if (it == guessGames.end()) {
             result["active"] = false;      // 没有进行中的游戏
-        } else {
+        }
+        else {
             result["active"] = true;
             result["remaining"] = it->second.getRemaining();
             result["finished"] = it->second.isFinished();
         }
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
     // ========== 用户注销账号接口 ==========
     // 方法：DELETE /api/user
@@ -500,8 +512,8 @@ int main() {
         }
 
         // 1. 根据用户名获取用户 ID
-       int user_id = getUserId(username);
-       if (user_id == -1) {
+        int user_id = getUserId(username);
+        if (user_id == -1) {
             sqlite3_close(db);
             res.status = 404;
             res.set_content(R"({"error":"User not found"})", "application/json");
@@ -559,7 +571,8 @@ int main() {
         for (auto it = token_store.begin(); it != token_store.end(); ) {
             if (it->second == username) {
                 it = token_store.erase(it);  // erase 返回下一个有效迭代器
-            } else {
+            }
+            else {
                 ++it;
             }
         }
@@ -572,7 +585,7 @@ int main() {
         result["success"] = true;
         result["message"] = "Account deleted successfully";
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
 
     // ========== 提交分数接口（供前端调用，也可内部调用） ==========
@@ -591,11 +604,12 @@ int main() {
             json result;
             result["success"] = ok;
             res.set_content(result.dump(), "application/json");
-        } catch (...) {
+        }
+        catch (...) {
             res.status = 400;
             res.set_content(R"({"error":"Invalid JSON"})", "application/json");
         }
-    });
+        });
 
     // ========== 获取排行榜接口 ==========
     svr.Get("/api/rank", [&](const httplib::Request& req, httplib::Response& res) {
@@ -614,9 +628,9 @@ int main() {
         }
 
         std::string sql = "SELECT u.username, s.best_score, s.updated_at FROM scores s "
-                          "JOIN users u ON s.user_id = u.id "
-                          "WHERE s.game_type = '" + game_type + "' "
-                          "ORDER BY s.best_score DESC LIMIT 10;";
+            "JOIN users u ON s.user_id = u.id "
+            "WHERE s.game_type = '" + game_type + "' "
+            "ORDER BY s.best_score DESC LIMIT 10;";
         json result = json::array();
         auto callback = [](void* data, int argc, char** argv, char** colName) -> int {
             json* arr = (json*)data;
@@ -628,7 +642,7 @@ int main() {
                 arr->push_back(entry);
             }
             return 0;
-        };
+            };
         char* errMsg = nullptr;
         int rc = sqlite3_exec(db, sql.c_str(), callback, &result, &errMsg);
         if (rc != SQLITE_OK) {
@@ -640,7 +654,7 @@ int main() {
         }
         sqlite3_close(db);
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
 
     // ========== 处波挡游戏（单人 vs AI） ==========
@@ -657,72 +671,83 @@ int main() {
         json result;
         result["message"] = "Game started. Your HP:2, Energy:0. AI HP:2, Energy:0";
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
     // 玩家提交动作
     svr.Post("/game/cbd/action", [&](const httplib::Request& req, httplib::Response& res) {
-    std::string username = getUserFromToken(req);
-    if (username.empty()) {
-        res.status = 401;
-        res.set_content(R"({"error":"Unauthorized"})", "application/json");
-        return;
-    }
-    auto it = cbdGames.find(username);
-    if (it == cbdGames.end()) {
-        res.status = 400;
-        res.set_content(R"({"error":"No active game, please start first"})", "application/json");
-        return;
-    }
-    auto& game = it->second;
-    try {
-        auto body = json::parse(req.body);
-        int actionType = body["action"]; // 0:获取费用, 1:攻击, 2:防御, 3:黑洞, 4:白洞, 5:金身, 6:爆破
-        bool ok = false;
-        if (actionType == 0) {
-            ok = game.setPlayerAction(CBDGame::ACTION_GAIN);
-        } else if (actionType == 1) {
-            int attackId = body["attackId"];
-            int multiplier = body.value("multiplier", 1);
-            ok = game.setPlayerAction(CBDGame::ACTION_ATTACK, attackId, multiplier);
-        } else if (actionType == 2) {
-            int defenseId = body["defenseId"];
-            ok = game.setPlayerAction(CBDGame::ACTION_DEFENSE, -1, 1, defenseId);
-        } else if (actionType == 3) {
-            ok = game.setPlayerAction(CBDGame::ACTION_BLACKHOLE);
-        } else if (actionType == 4) {
-            ok = game.setPlayerAction(CBDGame::ACTION_WHITEHOLE);
-        } else if (actionType == 5) {
-            ok = game.setPlayerAction(CBDGame::ACTION_GOLDEN);
-        } else if (actionType == 6) {
-            ok = game.setPlayerAction(CBDGame::ACTION_BOMB);
-        } else {
-            res.status = 400;
-            res.set_content(R"({"error":"Invalid action type"})", "application/json");
+        std::string username = getUserFromToken(req);
+        if (username.empty()) {
+            res.status = 401;
+            res.set_content(R"({"error":"Unauthorized"})", "application/json");
             return;
         }
-        if (!ok) {
+        auto it = cbdGames.find(username);
+        if (it == cbdGames.end()) {
             res.status = 400;
-            res.set_content("{\"error\":\"Invalid action (cost too high or invalid parameters)\"}", "application/json");
+            res.set_content(R"({"error":"No active game, please start first"})", "application/json");
             return;
         }
-        game.setAIAction();
-        int winner = game.resolveTurn();
-        json result;
-        result["player_hp"] = game.getPlayerHp();
-        result["player_energy"] = game.getPlayerEnergy();
-        result["ai_hp"] = game.getAiHp();
-        result["ai_energy"] = game.getAiEnergy();
-        result["last_result"] = game.getLastResult();
-        result["game_over"] = (winner != 0);
-        result["winner"] = winner;
-        res.set_content(result.dump(), "application/json");
-    } catch (const std::exception& e) {
-        res.status = 400;
-        json err;
-        err["error"] = "Invalid JSON or action";
-        res.set_content(err.dump(), "application/json");
-    }
-});
+        auto& game = it->second;
+        try {
+            auto body = json::parse(req.body);
+            int actionType = body["action"]; // 0:获取费用, 1:攻击, 2:防御, 3:黑洞, 4:白洞, 5:金身, 6:爆破
+            bool ok = false;
+            if (actionType == 0) {
+                ok = game.setPlayerAction(CBDGame::ACTION_GAIN);
+            }
+            else if (actionType == 1) {
+                int attackId = body["attackId"];
+                int multiplier = body.value("multiplier", 1);
+                ok = game.setPlayerAction(CBDGame::ACTION_ATTACK, attackId, multiplier);
+            }
+            else if (actionType == 2) {
+                int defenseId = body["defenseId"];
+                ok = game.setPlayerAction(CBDGame::ACTION_DEFENSE, -1, 1, defenseId);
+            }
+            else if (actionType == 3) {
+                ok = game.setPlayerAction(CBDGame::ACTION_BLACKHOLE);
+            }
+            else if (actionType == 4) {
+                ok = game.setPlayerAction(CBDGame::ACTION_WHITEHOLE);
+            }
+            else if (actionType == 5) {
+                ok = game.setPlayerAction(CBDGame::ACTION_GOLDEN);
+            }
+            else if (actionType == 6) {
+                ok = game.setPlayerAction(CBDGame::ACTION_BOMB);
+            }
+            else if (actionType == 7) {
+                ok = game.setPlayerAction(CBDGame::ACTION_RELEASE_BLACKHOLE);
+            }
+            else {
+                res.status = 400;
+                res.set_content(R"({"error":"Invalid action type"})", "application/json");
+                return;
+            }
+            if (!ok) {
+                res.status = 400;
+                res.set_content("{\"error\":\"Invalid action (cost too high or invalid parameters)\"}", "application/json");
+                return;
+            }
+            game.setAIAction();
+            int winner = game.resolveTurn();
+            json result;
+            result["player_hp"] = game.getPlayerHp();
+            result["player_energy"] = game.getPlayerEnergy();
+            result["ai_hp"] = game.getAiHp();
+            result["ai_energy"] = game.getAiEnergy();
+            result["last_result"] = game.getLastResult();
+            result["game_over"] = (winner != 0);
+            result["winner"] = winner;
+            res.set_content(result.dump(), "application/json");
+        }
+        catch (const std::exception& e) {
+            res.status = 400;
+            json err;
+            err["error"] = "Invalid JSON or action";
+            res.set_content(err.dump(), "application/json");
+        }
+        });
 
     // 获取当前游戏状态
     svr.Get("/game/cbd/state", [&](const httplib::Request& req, httplib::Response& res) {
@@ -746,10 +771,10 @@ int main() {
         result["ai_energy"] = game.getAiEnergy();
         result["last_result"] = game.getLastResult();
         res.set_content(result.dump(), "application/json");
-    });
+        });
 
 
-    
+
 
     // ========== 静态文件挂载（提供前端页面、样式、JavaScript 文件） ==========
     // 将 URL 路径映射到本地文件夹，使浏览器可以获取静态资源
@@ -760,6 +785,6 @@ int main() {
     // 启动 HTTP 服务器，监听本机的 8080 端口
     // 注意：listen 函数会阻塞当前线程，直到服务器停止
     svr.listen("localhost", 8080);
-    
+
     return 0;
 }

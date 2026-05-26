@@ -22,13 +22,14 @@ public:
     void init();
 
     enum ActionType {
-        ACTION_GAIN,
-        ACTION_ATTACK,
-        ACTION_DEFENSE,
-        ACTION_BLACKHOLE,
-        ACTION_WHITEHOLE,
-        ACTION_GOLDEN,   // 新增
-        ACTION_BOMB      // 新增
+        ACTION_GAIN,//获取费用
+        ACTION_ATTACK,//攻击行为
+        ACTION_DEFENSE,  //防御行为
+        ACTION_BLACKHOLE,//黑洞
+        ACTION_WHITEHOLE,//白洞
+        ACTION_GOLDEN,   //金身
+        ACTION_BOMB,     //爆破
+        ACTION_RELEASE_BLACKHOLE  //黑洞攻击释放
     };
 
     bool setPlayerAction(ActionType type, int attackId = -1, int multiplier = 1, int defenseId = -1);

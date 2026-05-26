@@ -10,20 +10,20 @@ CBDGame::CBDGame() {
         {"闪电五连鞭", 4, 2}, {"十字劈", 5, 5}, {"直射", 8, 8},
         {"叉字劈", 7, 7}, {"如来佛掌", 10, 10}, {"奥特曼激光", 20, 11}
     };
-    defenses = {
-        {"L型防御", {"小波", "波", "龙拳"}, 4},
-        {"屏障型防御", {"小波", "波", "能量柱", "如来佛掌"}, -1},
-        {"平行防御", {"龙拳"}, -1},
-        {"x型防御", {"直射"}, -1},
-        {"正叉字型防御", {"十字劈"}, -1},
-        {"倒叉字型防御", {"叉字劈"}, -1}
-    };
+   defenses = {
+    {"L型防御", {"小波", "波", "龙拳", "闪电五连鞭"}, 4},
+    {"屏障型防御", {"小波", "波", "能量柱", "如来佛掌", "闪电五连鞭"}, -1},
+    {"平行防御", {"龙拳", "闪电五连鞭"}, -1},
+    {"x型防御", {"直射", "闪电五连鞭"}, -1},
+    {"正叉字型防御", {"十字劈", "闪电五连鞭"}, -1},
+    {"倒叉字型防御", {"叉字劈", "闪电五连鞭"}, -1}
+};
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 }
 
 void CBDGame::init() {
-    human = {2, 0, ACTION_GAIN, -1, 1, -1, false, 0, 0, false};
-    ai = {2, 0, ACTION_GAIN, -1, 1, -1, false, 0, 0, false};
+    human = { 2, 0, ACTION_GAIN, -1, 1, -1, false, 0, 0, false };
+    ai = { 2, 0, ACTION_GAIN, -1, 1, -1, false, 0, 0, false };
     gameOver = false;
     winner = 0;
     lastResult = "";
@@ -36,22 +36,34 @@ bool CBDGame::setPlayerAction(ActionType type, int attackId, int multiplier, int
         if (attackId < 0 || attackId >= (int)attacks.size()) return false;
         if (multiplier < 1 || multiplier > 5) return false;
         cost = attacks[attackId].cost * multiplier;
-    } else if (type == ACTION_BLACKHOLE) {
+    }
+    else if (type == ACTION_BLACKHOLE) {
         cost = 2;
         if (human.hasBlackhole) return false; // 已有存储黑洞不能再用
-    } else if (type == ACTION_WHITEHOLE) {
+    }
+    else if (type == ACTION_WHITEHOLE) {
         cost = 4;
-    } else if (type == ACTION_GOLDEN) {
+    }
+    else if (type == ACTION_GOLDEN) {
         cost = 1;
         if (human.goldenUsed) return false;   // 一局一次
-    } else if (type == ACTION_BOMB) {
+    }
+    else if (type == ACTION_BOMB) {
         cost = 5;
-    } else if (type == ACTION_DEFENSE) {
+    }
+    else if (type == ACTION_RELEASE_BLACKHOLE) {
+        if (!human.hasBlackhole) return false;  // 没有存储的黑洞不能释放
+        if (human.energy < 1) return false;     // 费用不足
+        cost = 1;
+    }
+    else if (type == ACTION_DEFENSE) {
         cost = 0;
         // 防御不需要额外检查
-    } else if (type == ACTION_GAIN) {
+    }
+    else if (type == ACTION_GAIN) {
         cost = 0;
-    } else {
+    }
+    else {
         return false;   // 不认识的动作类型
     }
     if (cost > human.energy) return false;
@@ -114,7 +126,8 @@ void CBDGame::applyDamage(int target, int damage) {
     if (target == 0) {
         human.hp -= damage;
         if (human.hp < 0) human.hp = 0;
-    } else {
+    }
+    else {
         ai.hp -= damage;
         if (ai.hp < 0) ai.hp = 0;
     }
@@ -140,26 +153,61 @@ int CBDGame::resolveTurn() {
 
     auto isLaser = [&](int atkId) -> bool {
         return attacks[atkId].name == "奥特曼激光";
-    };
+        };
 
     // 扣除费用（攻击、黑洞、白洞、金身、爆破）
     auto deductCost = [&](Player& p) {
         int cost = 0;
         if (p.action == ACTION_ATTACK) {
             cost = attacks[p.attackId].cost * p.multiplier;
-        } else if (p.action == ACTION_BLACKHOLE) {
+        }
+        else if (p.action == ACTION_BLACKHOLE) {
             cost = 2;
-        } else if (p.action == ACTION_WHITEHOLE) {
+        }
+        else if (p.action == ACTION_WHITEHOLE) {
             cost = 4;
-        } else if (p.action == ACTION_GOLDEN) {
+        }
+        else if (p.action == ACTION_GOLDEN) {
             cost = 1;
-        } else if (p.action == ACTION_BOMB) {
+        }
+        else if (p.action == ACTION_BOMB) {
             cost = 5;
         }
+        else if (p.action == ACTION_RELEASE_BLACKHOLE) {
+            cost = 1;               // 新增：释放黑洞消耗 1 费
+        }
         p.energy -= cost;
-    };
+        };
     deductCost(human);
     deductCost(ai);
+
+    // 在 deductCost(human); deductCost(ai); 之后，金身标记之前，插入以下代码：
+
+// 记录双方本回合的动作
+    ss << "玩家: ";
+    switch (human.action) {
+    case ACTION_GAIN: ss << "获取费用"; break;
+    case ACTION_ATTACK: ss << attacks[human.attackId].name << " x" << human.multiplier; break;
+    case ACTION_DEFENSE: ss << defenses[human.defenseId].name; break;
+    case ACTION_BLACKHOLE: ss << "使用黑洞"; break;
+    case ACTION_WHITEHOLE: ss << "使用白洞"; break;
+    case ACTION_GOLDEN: ss << "使用金身"; break;
+    case ACTION_BOMB: ss << "使用爆破"; break;
+    case ACTION_RELEASE_BLACKHOLE: ss << "释放黑洞"; break;
+    default: ss << "未知动作";
+    }
+    ss << "； AI: ";
+    switch (ai.action) {
+    case ACTION_GAIN: ss << "获取费用"; break;
+    case ACTION_ATTACK: ss << attacks[ai.attackId].name << " x" << ai.multiplier; break;
+    case ACTION_DEFENSE: ss << defenses[ai.defenseId].name; break;
+    case ACTION_BLACKHOLE: ss << "使用黑洞"; break;
+    case ACTION_WHITEHOLE: ss << "使用白洞"; break;
+    case ACTION_GOLDEN: ss << "使用金身"; break;
+    case ACTION_BOMB: ss << "使用爆破"; break;
+    default: ss << "未知动作";
+    }
+    ss << "。 ";
 
     // 金身标记
     bool humanGolden = (human.action == ACTION_GOLDEN);
@@ -169,28 +217,43 @@ int CBDGame::resolveTurn() {
     if (human.action == ACTION_GOLDEN) human.goldenUsed = true;
     if (ai.action == ACTION_GOLDEN) ai.goldenUsed = true;
 
+
+
+
+
+    // 处理玩家主动释放黑洞（优先级最高，独立于其他动作）
+    if (human.action == ACTION_RELEASE_BLACKHOLE && human.hasBlackhole) {
+        // 注意：费用已在 setPlayerAction 中扣除，这里只执行释放效果
+        int target = 1; // 对AI造成伤害
+        applyDamage(target, human.storedDamage);
+        ss << "玩家释放黑洞，造成 " << human.storedDamage << " 点伤害。";
+        human.hasBlackhole = false;
+        human.storedDamage = 0;
+        human.storedTurn = 0;
+        // 释放动作不参与后续任何结算，将 human.action 临时改为 ACTION_GAIN 以避免干扰
+        human.action = ACTION_DEFENSE;   // 防御不会在 after_combat 中加能量;
+    }
+    // AI 的释放暂不实现（可留作扩展）
     // 处理黑洞释放
     auto processBlackhole = [&](Player& p, bool isHuman) {
         if (p.hasBlackhole && p.storedTurn > 0) {
             p.storedTurn--;
             if (p.storedTurn == 0) {
-                if (p.energy >= 1) {
-                    p.energy -= 1;
-                    int target = isHuman ? 1 : 0;
-                    applyDamage(target, p.storedDamage);
-                    ss << (isHuman ? "玩家" : "AI") << " 的黑洞释放，造成 " << p.storedDamage << " 点伤害。";
-                } else {
-                    ss << (isHuman ? "玩家" : "AI") << " 黑洞释放时费用不足，黑洞消失。";
-                }
+                ss << (isHuman ? "玩家" : "AI") << " 的黑洞超过3回合未释放，消失了。";
                 p.hasBlackhole = false;
                 p.storedDamage = 0;
-            } else {
-                ss << (isHuman ? "玩家" : "AI") << " 的黑洞还有 " << p.storedTurn << " 回合释放。";
+            }
+            else {
+                ss << (isHuman ? "玩家" : "AI") << " 的黑洞还有 " << p.storedTurn << " 回合可释放。";
             }
         }
-    };
+        };
     processBlackhole(human, true);
     processBlackhole(ai, false);
+
+
+
+
 
     // 破除黑洞/白洞的标记
     bool humanAttackPierce = false;
@@ -228,37 +291,45 @@ int CBDGame::resolveTurn() {
         if (human.action == ACTION_BOMB && ai.action == ACTION_BOMB) {
             ss << "双方同时爆破，互相抵消。 ";
             bombHandled = true;
-        } else if (human.action == ACTION_BOMB) {
+        }
+        else if (human.action == ACTION_BOMB) {
             if (ai.action == ACTION_DEFENSE || ai.action == ACTION_BLACKHOLE || ai.action == ACTION_WHITEHOLE) {
                 if (!aiGolden) {
                     kill(1);
                     ss << "AI 处于防御/黑洞/白洞状态，被爆破机制杀！ ";
-                } else {
+                }
+                else {
                     ss << "AI 处于金身状态，爆破无效。 ";
                 }
                 bombHandled = true;
-            } else if (ai.action == ACTION_ATTACK) {
+            }
+            else if (ai.action == ACTION_ATTACK) {
                 kill(0);
                 ss << "AI 正在攻击，玩家被爆破反杀！ ";
                 bombHandled = true;
-            } else if (ai.action == ACTION_GAIN) {
+            }
+            else if (ai.action == ACTION_GAIN) {
                 ss << "AI 正在获取费用，爆破无效果。 ";
                 bombHandled = true;
             }
-        } else if (ai.action == ACTION_BOMB) {
+        }
+        else if (ai.action == ACTION_BOMB) {
             if (human.action == ACTION_DEFENSE || human.action == ACTION_BLACKHOLE || human.action == ACTION_WHITEHOLE) {
                 if (!humanGolden) {
                     kill(0);
                     ss << "玩家处于防御/黑洞/白洞状态，被爆破机制杀！ ";
-                } else {
+                }
+                else {
                     ss << "玩家处于金身状态，爆破无效。 ";
                 }
                 bombHandled = true;
-            } else if (human.action == ACTION_ATTACK) {
+            }
+            else if (human.action == ACTION_ATTACK) {
                 kill(1);
                 ss << "玩家正在攻击，AI 被爆破反杀！ ";
                 bombHandled = true;
-            } else if (human.action == ACTION_GAIN) {
+            }
+            else if (human.action == ACTION_GAIN) {
                 ss << "玩家正在获取费用，爆破无效果。 ";
                 bombHandled = true;
             }
@@ -278,19 +349,22 @@ int CBDGame::resolveTurn() {
                 kill(0);
                 ss << "玩家黑洞吸收失败，受到过量伤害，玩家死亡！";
                 goto after_combat;
-            } else {
+            }
+            else {
                 human.hasBlackhole = true;
                 human.storedDamage = dmg;
                 human.storedTurn = 3;
-                ss << "玩家黑洞成功吸收 " << dmg << " 点伤害，将在3回合后释放。";
+                ss << "玩家黑洞成功吸收 " << dmg << " 点伤害，可以在3回合内释放。";
                 aiAttackAbsorbed = true;
             }
-        } else { // 白洞
+        }
+        else { // 白洞
             int limit = humanEnergyBefore * 2;
             if (dmg > limit) {
                 applyDamage(0, dmg);
                 ss << "玩家白洞吸收失败，受到 " << dmg << " 点伤害。";
-            } else {
+            }
+            else {
                 human.energy += dmg;
                 human.energy += 4;
                 ss << "玩家白洞成功吸收，获得 " << dmg << " 费用（并返还4费）。";
@@ -307,19 +381,22 @@ int CBDGame::resolveTurn() {
                 kill(1);
                 ss << "AI黑洞吸收失败，AI死亡！";
                 goto after_combat;
-            } else {
+            }
+            else {
                 ai.hasBlackhole = true;
                 ai.storedDamage = dmg;
                 ai.storedTurn = 3;
-                ss << "AI黑洞成功吸收 " << dmg << " 点伤害，将在3回合后释放。";
+                ss << "AI黑洞成功吸收 " << dmg << " 点伤害，可以在3回合内释放。";
                 humanAttackAbsorbed = true;
             }
-        } else { // 白洞
+        }
+        else { // 白洞
             int limit = aiEnergyBefore * 2;
             if (dmg > limit) {
                 applyDamage(1, dmg);
                 ss << "AI白洞吸收失败，受到 " << dmg << " 点伤害。";
-            } else {
+            }
+            else {
                 ai.energy += dmg;
                 ai.energy += 4;
                 ss << "AI白洞成功吸收，获得 " << dmg << " 费用（并返还4费）。";
@@ -336,24 +413,55 @@ int CBDGame::resolveTurn() {
             if (dmgH > dmgA) {
                 applyDamage(1, dmgH - dmgA);
                 ss << "玩家攻击伤害 " << dmgH << " vs AI " << dmgA << "，AI 受到 " << (dmgH - dmgA) << " 伤害。";
-            } else if (dmgA > dmgH) {
+            }
+            else if (dmgA > dmgH) {
                 applyDamage(0, dmgA - dmgH);
                 ss << "AI 攻击伤害 " << dmgA << " vs 玩家 " << dmgH << "，玩家受到 " << (dmgA - dmgH) << " 伤害。";
-            } else {
+            }
+            else {
                 ss << "双方攻击伤害相等，互相抵消。";
             }
-        } else {
+        }
+        else {
             if (human.action == ACTION_ATTACK && !humanAttackAbsorbed) {
                 int dmg = getAttackTotalDamage(human.attackId, human.multiplier);
                 if (isLaser(human.attackId)) {
                     applyDamage(1, dmg);
                     ss << "玩家奥特曼激光造成 " << dmg << " 点伤害（无法防御）。";
-                } else {
+                }
+                else {
                     if (aiGolden) {
                         ss << "AI 金身免疫攻击。";
-                    } else if (ai.action == ACTION_DEFENSE && isAttackDefended(0, 1, dmg)) {
-                        ss << "AI 防御成功，未受伤。";
-                    } else {
+                    }
+                    else if (ai.action == ACTION_DEFENSE) {
+                        int defId = ai.defenseId;
+                        const Attack& atk = attacks[human.attackId];
+                        // 检查是否在可防御列表中
+                        bool canDef = false;
+                        for (const auto& name : defenses[defId].canDefend) {
+                            if (name == atk.name) { canDef = true; break; }
+                        }
+                        if (canDef) {
+                            if (defId == 0) { // L型防御索引为0
+                                int reduced = dmg - 4;
+                                if (reduced > 0) {
+                                    applyDamage(1, reduced);
+                                    ss << "玩家攻击造成 " << reduced << " 点伤害（L型防御减免4点）。";
+                                }
+                                else {
+                                    ss << "玩家攻击被 L 型防御完全抵挡。";
+                                }
+                            }
+                            else {
+                                ss << "AI 防御成功，未受伤。";
+                            }
+                        }
+                        else {
+                            applyDamage(1, dmg);
+                            ss << "玩家攻击造成 " << dmg << " 点伤害。";
+                        }
+                    }
+                    else {
                         applyDamage(1, dmg);
                         ss << "玩家攻击造成 " << dmg << " 点伤害。";
                     }
@@ -364,12 +472,39 @@ int CBDGame::resolveTurn() {
                 if (isLaser(ai.attackId)) {
                     applyDamage(0, dmg);
                     ss << "AI 奥特曼激光造成 " << dmg << " 点伤害（无法防御）。";
-                } else {
+                }
+                else {
                     if (humanGolden) {
                         ss << "玩家金身免疫攻击。";
-                    } else if (human.action == ACTION_DEFENSE && isAttackDefended(1, 0, dmg)) {
-                        ss << "玩家防御成功，未受伤。";
-                    } else {
+                    }
+                    else if (human.action == ACTION_DEFENSE) {
+                        int defId = human.defenseId;
+                        const Attack& atk = attacks[ai.attackId];
+                        bool canDef = false;
+                        for (const auto& name : defenses[defId].canDefend) {
+                            if (name == atk.name) { canDef = true; break; }
+                        }
+                        if (canDef) {
+                            if (defId == 0) { // L型防御索引为0
+                                int reduced = dmg - 4;
+                                if (reduced > 0) {
+                                    applyDamage(0, reduced);
+                                    ss << "AI 攻击造成 " << reduced << " 点伤害（L型防御减免4点）。";
+                                }
+                                else {
+                                    ss << "AI 攻击被 L 型防御完全抵挡。";
+                                }
+                            }
+                            else {
+                                ss << "玩家防御成功，未受伤。";
+                            }
+                        }
+                        else {
+                            applyDamage(0, dmg);
+                            ss << "AI 攻击造成 " << dmg << " 点伤害。";
+                        }
+                    }
+                    else {
                         applyDamage(0, dmg);
                         ss << "AI 攻击造成 " << dmg << " 点伤害。";
                     }
@@ -394,7 +529,8 @@ after_combat:
         gameOver = true;
         winner = 2;
         ss << " 玩家战败，AI 获胜！";
-    } else if (ai.hp <= 0) {
+    }
+    else if (ai.hp <= 0) {
         gameOver = true;
         winner = 1;
         ss << " 玩家胜利！";
